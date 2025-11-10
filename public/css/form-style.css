@@ -1,0 +1,55 @@
+/* ====== Kontainer form ====== */
+      .profile-container {
+        max-width: 1285px;
+        margin: 50px auto;
+      }
+
+      /* ====== Input field ====== */
+      input.form-control {
+        border-radius: 0.4rem;
+        border: 1px solid #333;
+        height: 38px;
+      }
+
+      input.form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 5px rgba(13, 110, 253, 0.3);
+        transition: all 0.3s ease;
+      }
+
+      /* ====== Wrapper tombol bawah ====== */
+      .btn-wrapper {
+        text-align: end;
+        margin-top: 25px;
+      }
+
+      /* ====== Style Label Form (Baru) ====== */
+      .col-form-label {
+        font-weight: bold;
+        text-align: right;
+      }
+
+      /* ====== [PERBAIKAN] Wrapper untuk field password ====== */
+      .password-wrapper {
+        position: relative;
+      }
+
+      /* ====== [PERBAIKAN] Ikon toggle password (mata) ====== */
+      .toggle-password {
+        position: absolute;
+        right: 15px; /* Posisikan 15px dari kanan */
+        top: 50%;
+        transform: translateY(-50%); /* Tengahkan vertikal */
+        cursor: pointer;
+        color: #555;
+        font-size: 1.1rem;
+        -webkit-user-select: none;
+        user-select: none;
+        z-index: 10; /* Pastikan ikon di atas input */
+      }
+
+      /* ====== [PERBAIKAN] Input di dalam wrapper ====== */
+      .password-wrapper input.form-control {
+        /* Beri ruang di kanan agar teks tidak tertimpa ikon */
+        padding-right: 40px; 
+      }

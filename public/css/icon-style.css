@@ -1,0 +1,49 @@
+/* Ikon button */
+.icon-btn {
+  font-size: 1.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 10%; /* ujung agak tumpul */
+  width: 36px;        /* lebar tetap agar simetris */
+  height: 36px;       /* tinggi sama dengan lebar */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+/* Ikon edit */
+.icon-btn.edit {
+  color: #ffc107; /* kuning */
+}
+.icon-btn.edit:hover {
+  color: #fff; /* ikon jadi putih */
+  background-color: #ffc107; /* latar belakang kuning */
+}
+
+/* Ikon delete */
+.icon-btn.delete {
+  color: #dc3545; /* merah */
+}
+.icon-btn.delete:hover {
+  color: #fff; /* ikon jadi putih */
+  background-color: #dc3545; /* latar belakang merah */
+}
+
+
+/*Ikon back*/
+.btn-back {
+  color: #6c757d;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.btn-back:hover {
+  color: #000;
+  transform: scale(1.05);
+}
+

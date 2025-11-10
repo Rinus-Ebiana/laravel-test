@@ -1,0 +1,15 @@
+#title {
+  border-bottom: 3px solid #000;
+  display: inline-block;
+  padding-bottom: 3px;
+  font-size: 27px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 5rem;   /* setara dengan mt-5 di Bootstrap */
+  margin-bottom: 1.5rem; /* setara dengan mb-4 di Bootstrap */
+  width: auto;
+}
+
+body {
+  text-align: center; /* agar elemen #title tetap di tengah halaman */
+}

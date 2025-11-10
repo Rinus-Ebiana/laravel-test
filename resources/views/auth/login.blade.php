@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    /* ... (CSS Anda dari file asli) ... */
+    .btn-login {
+      background-color: #101F6A !important;
+      border: none !important;
+      color: white !important;
+      transition: background-color 0.3s ease;
+    }
+    .btn-login:hover {
+      background-color: #1A2C9C !important;
+      color: white !important;
+    }
+    .btn-login:focus,
+    .btn-login:active {
+      box-shadow: none !important;
+      background-color: #101F6A !important;
+      color: white !important;
+    }
+  </style>
+</head>
+<body class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+
+  <div class="card mx-auto shadow-sm" style="width: 24rem;">
+    <img src="{{ asset('assets/logo.png') }}" class="d-block mx-auto mt-4 mb-2" style="max-width: 85px;" alt="Logo-Stikom-Bali">
+
+    <div class="card-body">
+      <h6 class="text-center fw-bold">
+        SISTEM PERWALIAN PASCASARJANA ITB STIKOM BALI
+      </h6>
+
+      <form id="loginForm" method="POST" action="{{ route('login') }}" autocomplete="off">
+          @csrf <div class="mb-3 mt-4">
+            <input type="text" class="form-control text-center" id="username" name="username" placeholder="Username" autocomplete="off" required>
+          </div>
+
+          <div class="mb-3 mt-3">
+            <input type="password" class="form-control text-center" id="password" name="password" placeholder="Password" autocomplete="off" required>
+          </div>
+
+          <button type="submit" class="btn btn-login w-100 mt-2 mb-3 fw-bold">
+            Login
+          </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const showPassword = document.getElementById('showPassword');
+    const passwordField = document.getElementById('password');
+
+    showPassword.addEventListener('change', function () {
+      passwordField.type = this.checked ? 'text' : 'password';
+    });
+
+    // Hapus script submit bawaan, biarkan form POST biasa
+    // document.getElementById('loginForm').addEventListener('submit', function (e) {
+    //   e.preventDefault();
+    //   window.location.href = "homepage.html";
+    // });
+  </script>
+</body>
+</html>

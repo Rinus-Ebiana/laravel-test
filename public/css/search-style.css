@@ -1,0 +1,27 @@
+.search-bar {
+  position: relative;
+  width: 300px;
+}
+
+.search-bar input.form-control {
+  border-radius: 6px;
+  border: 1px solid #6c757d;
+  height: 38px;
+  transition: all 0.3s ease;
+  padding-left: 40px; /* beri ruang untuk ikon */
+}
+
+.search-bar input.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 5px rgba(13, 110, 253, 0.3);
+}
+
+/* ===== Perbaikan posisi ikon ===== */
+.search-bar i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  pointer-events: none; /* agar klik tetap fokus ke input */
+}

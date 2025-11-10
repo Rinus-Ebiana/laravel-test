@@ -1,0 +1,20 @@
+/* Tata letak container */
+.container.search-section {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center; /* pastikan sejajar vertikal */
+  gap: 0.75rem; /* beri sedikit ruang antar elemen */
+  max-width: 1300px;
+  margin: 3rem auto 1.5rem auto;
+}
+
+/* Pastikan tombol tampil proporsional */
+.container.search-section .btn-custom {
+  height: 38px;              /* samakan tinggi dengan input */
+  padding: 0 1.5rem;         /* beri ruang horizontal yang nyaman */
+  margin: 0;                 /* hilangkan margin tambahan (misal dari mb-4) */
+  display: flex;
+  align-items: center;       /* teks tombol tetap sejajar vertikal */
+  justify-content: center;
+  white-space: nowrap;       /* cegah teks terpotong */
+}

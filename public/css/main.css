@@ -1,0 +1,114 @@
+:root {
+  --main-blue: #101F6A;
+  --menu-bg: rgba(108,117,125,0.15);
+}
+
+
+
+/* Navbar tetap di atas saat scroll */
+nav.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1100;
+  background-color: #101F6A !important;
+}
+
+
+/* Navigasi tetap di bawah navbar */
+.nav-container {
+  position: fixed;
+  top: 85px; /* menyesuaikan tinggi navbar */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  z-index: 1000;
+  background-color: #E9EAEC;
+  padding: 8px 1;
+  border-radius: 0;
+}
+
+body {
+  padding-top: 100px; /* total tinggi navbar + navigasi */
+}
+
+
+
+/* Navigasi Aktif */
+.nav-btn {
+  border-radius: .5rem;
+  min-width: 200px;
+  font-weight: bold;
+  color: black !important;
+  border: none;
+}
+
+.nav-btn.active {
+  background-color: var(--main-blue) !important;
+  color: white !important;
+}
+
+
+
+/* Popup User Profile*/
+.profile-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#userPopup {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#userPopup.show {
+  display: block !important;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#userPopup.hide {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Popup user */
+#userPopup {
+  position: absolute;
+  top: 70px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  width: 200px;
+  z-index: 2000;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#userPopup.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#userPopup button {
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+#userPopup span {
+  margin-bottom: -15px; /* jarak antara nama dan tombol pertama */
+}
+
+/* Efek transisi lembut saat halaman dimuat */
+body {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+body.loaded {
+  opacity: 1;
+}

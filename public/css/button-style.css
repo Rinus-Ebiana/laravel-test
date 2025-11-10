@@ -1,0 +1,27 @@
+/* ===================== STYLE BUTTON ===================== */
+:root {
+  --main-blue: #101F6A;
+}
+
+/* Tombol utama */
+.btn-custom {
+  background-color: var(--main-blue);
+  color: white;
+  font-weight: bold;
+  border: none;
+  transition: background-color .2s ease;
+  border-radius: .5rem;
+  margin-top: 25px;
+}
+
+/* Efek hover dan fokus */
+.btn-custom:hover {
+  background-color: #172a8a;
+  color: white;
+}
+
+.btn-custom:active,
+.btn-custom:focus {
+  background-color: var(--main-blue) !important;
+  box-shadow: none !important;
+}

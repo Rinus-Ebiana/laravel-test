@@ -1,0 +1,56 @@
+/* ====== Style untuk Tombol Sort (DIPERBARUI) ====== */
+
+/* Tombol sort kecil */
+.btn-sort {
+  border: none;
+  background: none;
+  font-size: 10px;
+  color: #ffffff; /* Ini akan menjadi warna panah */
+  margin-left: 3px;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: opacity 0.2s;
+}
+
+/* * 1. SELALU TAMPILKAN PANAH (DEFAULT)
+ * Kita tambahkan panah bawah (▼) ke SEMUA tombol .btn-sort.
+ * Kita buat sedikit transparan (opacity: 0.5) agar terlihat "tidak aktif".
+*/
+.btn-sort::after {
+  content: "▼"; /* Panah bawah sebagai default */
+  font-size: 10px;
+  margin-left: 3px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+/* * 2. UBAH PANAH SAAT AKTIF (NAIK)
+ * Saat tombol memiliki .active dan .asc, kita ubah 
+ * kontennya menjadi panah atas (▲).
+*/
+.btn-sort.active.asc::after {
+  content: "▲";
+}
+
+/* * 3. UBAH PANAH SAAT AKTIF (TURUN)
+ * (Ini sebenarnya sudah default, tapi baik untuk didefinisikan)
+*/
+.btn-sort.active.desc::after {
+  content: "▼";
+}
+
+/* * 4. BUAT LEBIH JELAS SAAT AKTIF
+ * Saat tombol .active (naik atau turun), buat
+ * panahnya 100% terlihat (tidak transparan).
+*/
+.btn-sort.active::after {
+  opacity: 1;
+}
+
+/* * 5. BUAT LEBIH JELAS SAAT HOVER
+ * Saat mouse berada di atas tombol, buat juga
+ * panahnya 100% terlihat.
+*/
+.btn-sort:hover::after {
+  opacity: 1;
+}
