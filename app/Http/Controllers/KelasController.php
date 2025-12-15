@@ -75,24 +75,25 @@ class KelasController extends Controller
      */
     public function download()
     {
-        // 1. Ambil jadwal permanen terakhir (logika sama dengan index)
         $latestPermanentSchedule = Schedule::where('is_permanent', true)
                                            ->orderBy('created_at', 'desc')
                                            ->first();
 
-        $entriesBySemester = collect();
-        if ($latestPermanentSchedule) {
-            $entries = $latestPermanentSchedule->entries()->with('matakuliah', 'dosen')->get();
-            $entriesBySemester = $entries->sortBy('matakuliah.semester')
-                                         ->groupBy(function($entry) {
-                                             return $entry->matakuliah->semester;
-                                         });
+        if (!$latestPermanentSchedule) {
+            return redirect()->route('kelas.index')->withErrors(['msg' => 'Tidak ada jadwal permanen.']);
         }
-        
-        // 2. Tentukan nama file
-        $fileName = 'jadwal_kelas_' . ($latestPermanentSchedule->nama_jadwal ?? 'terbaru') . '.pdf';
 
-        // 3. Render view 'unduh.jadwal-kelas'
+        // ... (logika pengambilan data entriesBySemester tetap sama) ...
+        $entries = $latestPermanentSchedule->entries()->with('matakuliah', 'dosen')->get();
+        $entriesBySemester = $entries->sortBy('matakuliah.semester')
+                                     ->groupBy(function($entry) {
+                                         return $entry->matakuliah->semester;
+                                     });
+        
+        // [PERBAIKAN] Ganti '/' dengan '_'
+        $safeName = str_replace(['/', '\\'], '_', $latestPermanentSchedule->nama_jadwal);
+        $fileName = 'Jadwal_Kelas_' . $safeName . '.pdf';
+
         $pdf = Pdf::loadView('unduh.jadwal-kelas', [
             'schedule' => $latestPermanentSchedule,
             'entriesBySemester' => $entriesBySemester
@@ -100,7 +101,6 @@ class KelasController extends Controller
         
         $pdf->setPaper('a4', 'landscape');
 
-        // 5. Download file
         return $pdf->download($fileName);
     }
 }

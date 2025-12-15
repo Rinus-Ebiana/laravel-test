@@ -192,19 +192,15 @@ class JadwalController extends Controller
      */
     public function downloadSemua(Schedule $schedule)
     {
-        // 1. Ambil data (sama seperti sebelumnya)
         $schedule->load('entries.matakuliah', 'entries.dosen');
         
-        // 2. Tentukan nama file
-        $fileName = 'jadwal_semua_' . $schedule->nama_jadwal . '.pdf';
+        // [PERBAIKAN] Ganti '/' dengan '_' agar nama file valid
+        $safeName = str_replace(['/', '\\'], '_', $schedule->nama_jadwal);
+        $fileName = 'jadwal_semua_' . $safeName . '.pdf';
 
-        // 3. Render view-nya menjadi HTML
         $pdf = Pdf::loadView('unduh.jadwal-semua', ['schedule' => $schedule]);
-        
-        // 4. Atur menjadi landscape (karena tabelnya lebar)
         $pdf->setPaper('a4', 'landscape');
 
-        // 5. Download file
         return $pdf->download($fileName);
     }
 
@@ -213,23 +209,20 @@ class JadwalController extends Controller
      */
     public function downloadPerDosen(Schedule $schedule)
     {
-        // 1. Ambil data dan kelompokkan (sama seperti sebelumnya)
         $entries = $schedule->entries()->with('matakuliah', 'dosen')->get();
         $jadwalPerDosen = $entries->groupBy('dosen_kd');
         
-        // 2. Tentukan nama file
-        $fileName = 'jadwal_per_dosen_' . $schedule->nama_jadwal . '.pdf';
+        // [PERBAIKAN] Ganti '/' dengan '_'
+        $safeName = str_replace(['/', '\\'], '_', $schedule->nama_jadwal);
+        $fileName = 'jadwal_per_dosen_' . $safeName . '.pdf';
 
-        // 3. Render view-nya menjadi HTML
         $pdf = Pdf::loadView('unduh.jadwal-dosen', [
             'schedule' => $schedule,
             'jadwalPerDosen' => $jadwalPerDosen
         ]);
 
-        // 4. Atur menjadi landscape
         $pdf->setPaper('a4', 'landscape');
 
-        // 5. Download file
         return $pdf->download($fileName);
     }
 }

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Schema; // <-- PENTING
-use Illuminate\Support\Facades\DB;       // <-- PENTING
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,24 +14,33 @@ class DatabaseSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
 
         // 2. Kosongkan tabel dalam urutan yang BENAR
-        //    (Selalu tabel "anak" / "pivot" terlebih dahulu)
+        //    (Tabel "child" / "pivot" / "transaksi" harus dihapus duluan)
+        
+        // Tabel Level 3 (Paling Bawah)
+        DB::table('krs_records')->truncate(); 
+        
+        // Tabel Level 2 (Bergantung pada tabel lain)
+        DB::table('schedule_entries')->truncate();
+        DB::table('mahasiswa_matakuliah')->truncate();
         DB::table('dosen_matakuliah')->truncate();
         
-        // 3. Baru kosongkan tabel "parent" dan sisanya
+        // Tabel Level 1 (Induk)
+        DB::table('schedules')->truncate();
         DB::table('matakuliah')->truncate();
         DB::table('dosen')->truncate();
         DB::table('mahasiswa')->truncate();
         DB::table('users')->truncate();
         
-        // 4. Aktifkan kembali pengecekan foreign key
+        // 3. Aktifkan kembali pengecekan foreign key
         Schema::enableForeignKeyConstraints();
 
-        // 5. Panggil semua seeder (yang sekarang HANYA mengisi data)
+        // 4. Panggil semua seeder
         $this->call([
             UserSeeder::class,
             DosenSeeder::class,
             MatakuliahSeeder::class,
             MahasiswaSeeder::class,
+            // (Jadwal, Kelas, dan KRS tidak punya seeder khusus karena datanya dinamis)
         ]);
     }
 }
