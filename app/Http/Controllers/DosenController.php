@@ -11,11 +11,32 @@ class DosenController extends Controller
     /**
      * Tampilkan semua data dosen (READ)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Ambil data dan urutkan berdasarkan KD
-        $dosen = Dosen::orderBy('kd', 'asc')->get();
-        return view('dosen.index', ['dosen' => $dosen]);
+        $search = trim($request->input('search'));
+
+        $query = Dosen::orderBy('kd', 'asc');
+
+        if ($search) {
+            $query->where('kd', 'like', '%' . $search . '%')
+                  ->orWhere('nama', 'like', '%' . $search . '%')
+                  ->orWhere('nip', 'like', '%' . $search . '%');
+        }
+
+        $dosen = $query->get();
+        
+        // --- LOGIKA AJAX BARU ---
+        if ($request->ajax()) {
+            // Jika request datang dari AJAX, kembalikan hanya HTML untuk baris tabel
+            // Kita akan render view parsial baru: 'dosen._table_rows'
+            return view('dosen._table_rows', ['dosen' => $dosen, 'search' => $search])->render();
+        }
+
+        // Jika request normal (non-AJAX, misalnya akses langsung ke URL)
+        return view('dosen.index', [
+            'dosen' => $dosen,
+            'search' => $search
+        ]);
     }
 
     /**

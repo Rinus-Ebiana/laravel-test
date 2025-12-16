@@ -6,12 +6,25 @@
   <div id="title">Data Dosen Pascasarjana</div>
   
   <div class="container search-section">
-    {{-- <a href="{{ route('dosen.importForm') }}" class="btn btn-custom" style="margin: 0; padding: 0 1.5rem; height: 38px; display: flex; align-items: center;">Import</a> --}}
+    
+    {{-- FORM DI PERLUKAN untuk Live Search AJAX --}}
+    <form action="{{ route('dosen.index') }}" method="GET" class="search-bar" id="searchForm" style="position: relative;">
+      
+      {{-- Input Pencarian. Padding left disesuaikan dengan posisi ikon. --}}
+      <input type="text" 
+             name="search" 
+             id="searchInput" 
+             class="form-control" 
+             placeholder="Cari Kode, Nama, atau NIP..."
+             value="{{ $search ?? '' }}"
+             style="padding-left: 35px;"> 
+      
+      {{-- Ikon Pencarian. Posisi diatur secara absolute di dalam form relative. --}}
+      <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 10;"></i>
 
-    <div class="search-bar">
-      <input type="text" id="searchInput" class="form-control" placeholder="Cari data...">
-      <i class="bi bi-search"></i>
-    </div>
+      {{-- Tombol Reset (ikon 'X') DIHILANGKAN sesuai permintaan Anda --}}
+      
+    </form>
 
     <a href="{{ route('dosen.create') }}" class="btn btn-custom" id="btnTambah">Tambah</a>
   </div>
@@ -32,21 +45,9 @@
             <th>Email</th>
           </tr>
         </thead>
-        <tbody class="bg-white">
-          @foreach($dosen as $d)
-          <tr>
-            <td class="cell-counter"></td> <td>{{ $d->kd }}</td>
-            <td class="text-start">
-              <a href="{{ route('dosen.show', ['dosen' => $d->kd]) }}" class="text-decoration-none text-dark d-inline-flex align-items-center">
-                {{ $d->nama }}
-                <i class="bi bi-chevron-right ms-1" style="font-size: 0.9rem; opacity: 0.6;"></i>
-              </a>
-            </td>
-            <td>{{ $d->nip }}</td>
-            <td>{{ $d->no_telp }}</td>
-            <td class="text-start">{{ $d->email }}</td>
-          </tr>
-          @endforeach
+        <tbody class="bg-white" id="tableBody">
+          {{-- Menggunakan view parsial yang berisi baris-baris tabel --}}
+          @include('dosen._table_rows')
         </tbody>
       </table>
     </div>

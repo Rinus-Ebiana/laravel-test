@@ -6,12 +6,24 @@
   <div id="title">Data Matakuliah Pascasarjana</div>
   
   <div class="container search-section">
-    {{-- <a href="{{ route('matakuliah.importForm') }}" class="btn btn-custom" style="margin: 0; padding: 0 1.5rem; height: 38px; display: flex; align-items: center;">Import</a> --}}
+    {{-- FIX: Mengganti div.search-bar menjadi <form> dengan ID dan style untuk layout --}}
+    <form action="{{ route('matakuliah.index') }}" method="GET" class="search-bar" id="searchForm" style="position: relative;">
+      
+      {{-- Input Pencarian. Placeholder diperbarui --}}
+      <input type="text" 
+             name="search" 
+             id="searchInput" 
+             class="form-control" 
+             placeholder="Cari Kode, Nama, SKS, Semester, atau Dosen..."
+             value="{{ $search ?? '' }}"
+             style="padding-left: 35px;"> 
+      
+      {{-- Ikon Pencarian. Posisi diatur secara absolute. --}}
+      <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 10;"></i>
 
-    <div class="search-bar">
-      <input type="text" id="searchInput" class="form-control" placeholder="Cari data...">
-      <i class="bi bi-search"></i>
-    </div>
+    </form>
+    
+    {{-- <a href="{{ route('matakuliah.importForm') }}" class="btn btn-custom" style="margin: 0; padding: 0 1.5rem; height: 38px; display: flex; align-items: center;">Import</a> --}}
 
     <a href="{{ route('matakuliah.create') }}" class="btn btn-custom" id="btnTambah">Tambah</a>
   </div>
@@ -30,28 +42,9 @@
             <th>Dosen Pengampu <button class="btn btn-sm btn-sort" data-column="5"></button></th>
           </tr>
         </thead>
-        <tbody class="bg-white">
-          @foreach($matakuliah as $mk)
-          <tr>
-            <td class="cell-counter"></td>
-            <td>{{ $mk->kode_mk }}</td>
-            <td class="text-start">
-              <a href="{{ route('matakuliah.show', $mk->kode_mk) }}" class="text-decoration-none text-dark d-inline-flex align-items-center">
-                {{ $mk->nama_mk }}
-                <i class="bi bi-chevron-right ms-1" style="font-size: 0.9rem; opacity: 0.6;"></i>
-              </a>
-            </td>
-            <td>{{ $mk->sks }}</td>
-            <td>{{ $mk->semester }}</td>
-            <td class="text-start">
-              @forelse($mk->dosen as $d)
-                {{ $d->nama }}<br>
-              @empty
-                -
-              @endforelse
-              </td>
-          </tr>
-          @endforeach
+        {{-- FIX KRITIS: Tambahkan ID tableBody dan gunakan @include view parsial --}}
+        <tbody class="bg-white" id="tableBody"> 
+          @include('matakuliah._table_rows')
         </tbody>
       </table>
     </div>

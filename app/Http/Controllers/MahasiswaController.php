@@ -36,13 +36,75 @@ class MahasiswaController extends Controller
     }
 
     // ... (fungsi index() Anda tidak berubah)
-    public function index()
+    public function index(Request $request)
     {
-        $mahasiswa = Mahasiswa::orderBy('tahun_masuk_awal', 'desc')
-                              ->orderBy('semester_masuk_awal', 'desc')
-                              ->get();
-                              
-        return view('mahasiswa.index', ['mahasiswa' => $mahasiswa]);
+        $search = trim($request->input('search')); // Ambil input search
+
+        // 1. Mulai query database
+        $query = Mahasiswa::orderBy('tahun_masuk_awal', 'desc')
+                              ->orderBy('semester_masuk_awal', 'desc');
+        
+        $isSemesterSearch = false;
+        
+        // Cek apakah input adalah angka semester (1-8)
+        if (is_numeric($search) && $search > 0 && $search <= 8) {
+            $isSemesterSearch = true;
+        }
+
+        // Terapkan filter standard database (jika BUKAN hanya pencarian semester)
+        if (!$isSemesterSearch && $search) {
+            // Gunakan where() dengan closure untuk mengelompokkan kondisi OR (WHERE (A OR B OR C...))
+            $query->where(function ($q) use ($search) {
+                
+                // 1. Pencarian di NIM dan NAMA
+                $q->where('nim', 'like', '%' . $search . '%')
+                  ->orWhere('nama', 'like', '%' . $search . '%');
+                  
+                // 2. Logika Pencarian Tahun Masuk (kolom fisik)
+                $lowerSearch = strtolower($search);
+                
+                // Cek apakah input adalah tahun (4 digit angka)
+                if (preg_match('/^\d{4}$/', $search)) {
+                    $q->orWhere('tahun_masuk_awal', (int) $search);
+                }
+                
+                // Cek jika input mengandung kata 'ganjil' atau 'genap' (kolom fisik)
+                if (str_contains($lowerSearch, 'ganjil')) {
+                    $q->orWhere('semester_masuk_awal', 1);
+                } elseif (str_contains($lowerSearch, 'genap')) {
+                    $q->orWhere('semester_masuk_awal', 2);
+                }
+                
+                // Cek jika input adalah format tahun masuk (misal: 2022/2023)
+                if (preg_match('/(\d{4})/', $search, $matches)) {
+                    $q->orWhere('tahun_masuk_awal', (int) $matches[1]);
+                }
+            });
+        }
+        
+        // 2. Ambil data dari database
+        $mahasiswa = $query->get();
+        
+        // 3. Filter Collection berdasarkan SEMESTER (Kolom Virtual)
+        if ($isSemesterSearch) {
+            $targetSemester = (int) $search;
+            // Filter koleksi Mahasiswa menggunakan Accessor 'semester'
+            $mahasiswa = $mahasiswa->filter(function ($m) use ($targetSemester) {
+                // $m->semester memanggil Accessor
+                return $m->semester == $targetSemester; 
+            })->values(); // Reset keys after filtering
+        }
+        
+        // Logika AJAX tetap sama
+        if ($request->ajax()) {
+            return view('mahasiswa._table_rows', ['mahasiswa' => $mahasiswa, 'search' => $search])->render();
+        }
+
+        // Jika request normal (non-AJAX)
+        return view('mahasiswa.index', [
+            'mahasiswa' => $mahasiswa,
+            'search' => $search // Kirim variabel search
+        ]);
     }
 
     // ... (fungsi create() Anda tidak berubah)

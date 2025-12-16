@@ -6,11 +6,24 @@
   <div id="title">Data Mahasiswa Pascasarjana</div>
   
   <div class="container search-section">
-        <div class="search-bar">
-      <input type="text" id="searchInput" class="form-control" placeholder="Cari data...">
-      <i class="bi bi-search"></i>
-    </div>
+    
+    {{-- FORM dengan ID untuk Live Search AJAX --}}
+    <form action="{{ route('mahasiswa.index') }}" method="GET" class="search-bar" id="searchForm" style="position: relative;">
+      
+      {{-- Input Pencarian. Placeholder diperbarui --}}
+      <input type="text" 
+             name="search" 
+             id="searchInput" 
+             class="form-control" 
+             placeholder="Cari NIM, Nama, Tahun Masuk, atau Semester..."
+             value="{{ $search ?? '' }}"
+             style="padding-left: 35px;"> 
+      
+      {{-- Ikon Pencarian. --}}
+      <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 10;"></i>
 
+    </form>
+    
     <a href="{{ route('mahasiswa.importForm') }}" class="btn btn-custom" style="margin: 0; padding: 0 1.5rem; height: 38px; display: flex; align-items: center;">Import</a>
 
     <a href="{{ route('mahasiswa.create') }}" class="btn btn-custom" id="btnTambah">Tambah</a>
@@ -42,22 +55,9 @@
             <th>Email</th>
           </tr>
         </thead>
-        <tbody class="bg-white">
-          @foreach($mahasiswa as $m)
-          <tr>
-            <td class="cell-counter"></td>
-            <td class="text-start">{{ $m->tahun_masuk_string }}</td>
-            <td>{{ $m->semester }}</td> <td>{{ $m->nim }}</td>
-            <td class="text-start">
-              <a href="{{ route('mahasiswa.show', ['mahasiswa' => $m->nim]) }}" class="text-decoration-none text-dark d-inline-flex align-items-center">
-                {{ $m->nama }}
-                <i class="bi bi-chevron-right ms-1" style="font-size: 0.9rem; opacity: 0.6;"></i>
-              </a>
-            </td>
-            <td>{{ $m->no_telp }}</td>
-            <td class="text-start">{{ $m->email }}</td>
-          </tr>
-          @endforeach
+        {{-- FIX KRITIS: Tambahkan ID tableBody dan gunakan @include view parsial --}}
+        <tbody class="bg-white" id="tableBody"> 
+          @include('mahasiswa._table_rows')
         </tbody>
       </table>
     </div>

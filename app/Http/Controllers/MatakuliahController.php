@@ -12,21 +12,44 @@ class MatakuliahController extends Controller
     /**
      * Tampilkan semua data (READ)
      */
-    public function index()
+    public function index(Request $request) // Tambahkan Request
     {
-        // Eager load relasi 'dosen' untuk efisiensi
-        $matakuliah = Matakuliah::with('dosen')->orderBy('semester', 'asc')->get();
-        return view('matakuliah.index', ['matakuliah' => $matakuliah]);
-    }
+        $search = trim($request->input('search'));
 
-    /**
-     * Tampilkan form tambah (CREATE - Form)
-     */
-    public function create()
-    {
-        // Ambil semua dosen untuk ditampilkan di form <select>
-        $dosen = Dosen::orderBy('nama', 'asc')->get();
-        return view('matakuliah.create', ['dosen' => $dosen]);
+        // Eager load relasi 'dosen' untuk efisiensi
+        $query = Matakuliah::with('dosen')->orderBy('semester', 'asc');
+        
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                // 1. Pencarian di Kode MK dan Nama MK
+                $q->where('kode_mk', 'like', '%' . $search . '%')
+                  ->orWhere('nama_mk', 'like', '%' . $search . '%');
+                
+                // 2. Pencarian di SKS dan Semester (jika input adalah angka)
+                if (is_numeric($search) && $search > 0) {
+                    // Cari di kolom 'sks' atau 'semester' jika inputnya angka
+                    $q->orWhere('sks', (int) $search)
+                      ->orWhere('semester', (int) $search);
+                }
+
+                // 3. Pencarian di Nama Dosen Pengampu (Relational Search)
+                // Filter Matakuliah yang memiliki Dosen dengan nama yang cocok
+                $q->orWhereHas('dosen', function ($dosenQuery) use ($search) {
+                    $dosenQuery->where('nama', 'like', '%' . $search . '%');
+                });
+            });
+        }
+        
+        $matakuliah = $query->get();
+        
+        // --- LOGIKA AJAX ---
+        if ($request->ajax()) {
+            // Mengembalikan view parsial untuk tbody
+            return view('matakuliah._table_rows', ['matakuliah' => $matakuliah, 'search' => $search])->render();
+        }
+
+        // Jika request normal (non-AJAX)
+        return view('matakuliah.index', ['matakuliah' => $matakuliah, 'search' => $search]);
     }
 
     /**

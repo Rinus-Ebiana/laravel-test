@@ -123,5 +123,74 @@ document.addEventListener('DOMContentLoaded', function() {
   // 3. Tambahkan class 'loaded' ke body
   document.body.classList.add('loaded');
 
+  // 4. FIX BARU: Logic Live Search dengan Debounce
+  const searchInput = document.getElementById('searchInput');
+  const tableBody = document.getElementById('tableBody');
+  const searchForm = document.getElementById('searchForm'); // Ambil form
+
+  if (searchInput && tableBody && searchForm) {
+      let timeout = null;
+      let lastSearchValue = searchInput.value; // Menyimpan nilai pencarian terakhir
+      
+      const performSearch = function (searchValue) {
+          
+          // Memastikan hanya query baru yang diproses
+          if (searchValue === lastSearchValue) {
+              return;
+          }
+          lastSearchValue = searchValue;
+          
+          // Dapatkan URL saat ini (misalnya /dosen)
+          const url = searchForm.getAttribute('action');
+          // Tambahkan parameter AJAX dan search
+          const fetchUrl = `${url}?search=${encodeURIComponent(searchValue)}&ajax=1`; 
+          
+          // Kirim permintaan AJAX
+          fetch(fetchUrl, {
+              headers: {
+                  'X-Requested-With': 'XMLHttpRequest' // Header Laravel untuk mendeteksi AJAX
+              }
+          })
+          .then(response => response.text())
+          .then(html => {
+              // Ganti isi tbody dengan hasil yang baru
+              tableBody.innerHTML = html; 
+              
+              // Panggil kembali initSearchAndSort untuk penomoran ulang (cell-counter)
+              initSearchAndSort();
+          })
+          .catch(error => {
+              console.error('Error saat melakukan pencarian AJAX:', error);
+          });
+      };
+
+      // Listener untuk input
+      searchInput.addEventListener('input', function () {
+          clearTimeout(timeout);
+
+          // Simpan posisi cursor sebelum timeout
+          const currentCursorPosition = searchInput.selectionStart;
+
+          timeout = setTimeout(function () {
+              const searchValue = searchInput.value;
+              performSearch(searchValue);
+              
+              // KUNCI FIX: Kembalikan fokus dan posisi cursor setelah AJAX selesai
+              // Karena tidak ada page refresh, kita hanya perlu memastikan fokus tetap ada.
+              searchInput.focus();
+              searchInput.setSelectionRange(currentCursorPosition, currentCursorPosition);
+              
+          }, 300); // Jeda 300ms
+
+      });
+      
+      // Mencegah submit form secara tradisional saat tombol enter ditekan (jika masih ada)
+      searchForm.addEventListener('submit', function(e) {
+          e.preventDefault(); 
+          // Jika enter ditekan, langsung panggil pencarian tanpa menunggu debounce
+          performSearch(searchInput.value);
+      });
+  }
+
   // (Fungsi initNavButtons() tidak diperlukan lagi, diganti oleh Blade)
 });
