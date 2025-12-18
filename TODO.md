@@ -1,2 +1,0 @@
-- [] Remove WithHeadings from implements in KrsAngkatanExport.php
-- [] Remove the headings() method from KrsAngkatanExport.php
