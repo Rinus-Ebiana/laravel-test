@@ -5,38 +5,88 @@ namespace App\Http\Controllers;
 use App\Models\Mahasiswa;
 use App\Models\Matakuliah;
 use App\Models\Schedule;
+use App\Models\ScheduleEntry;
 use App\Models\KrsRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\KrsAngkatanExport;
+use App\Exports\TemplateNilaiExport;
+use App\Imports\NilaiMahasiswaImport;
 
 class KrsController extends Controller
 {
     /**
+     * Helper private untuk mem-parse slug angkatan menjadi tahun dan semester.
+     */
+    private function parseAngkatanSlug(string $slug): ?array
+    {
+        // Mencari 4 digit tahun
+        if (preg_match('/(\d{4})/', $slug, $matches)) {
+            $tahun_awal = (int) $matches[1];
+        } else {
+            return null;
+        }
+
+        $lowerSlug = strtolower($slug);
+        $semester_awal = null;
+
+        // Identifikasi semester dari kata kunci Ganjil/Genap atau angka 1/2
+        if (str_contains($lowerSlug, 'ganjil') || str_contains($lowerSlug, '1')) {
+            $semester_awal = 1;
+        } elseif (str_contains($lowerSlug, 'genap') || str_contains($lowerSlug, '2')) {
+            $semester_awal = 2;
+        }
+
+        if (!$tahun_awal || !$semester_awal) {
+            return null;
+        }
+        
+        return [
+            'tahun_awal' => $tahun_awal,
+            'semester_awal' => $semester_awal,
+        ];
+    }
+
+    /**
      * Halaman index KRS.
-     * Menampilkan "folder" angkatan (tahun masuk + semester masuk).
      */
     public function index()
     {
-        // 1. Ambil semua kombinasi tahun & semester yang unik
+        // ... (fungsi index tetap sama) ...
         $angkatan = Mahasiswa::select('tahun_masuk_awal', 'semester_masuk_awal')
                              ->distinct()
                              ->whereNotNull('tahun_masuk_awal')
                              ->orderBy('tahun_masuk_awal', 'desc')
                              ->orderBy('semester_masuk_awal', 'desc')
-                             ->get(); // -> [{2024, 1}, {2023, 2}, {2023, 1}, {2022, 2}]
-        
-        // 2. Ubah data menjadi format yang kita inginkan
+                             ->get();
+
         $formattedAngkatan = $angkatan->map(function($item) {
             $tahun = $item->tahun_masuk_awal;
             $semester = $item->semester_masuk_awal;
-            
             $semesterString = ($semester == 1) ? "GANJIL" : "GENAP";
             $tahunString = $tahun . '/' . ($tahun + 1);
-            
+            $slug = strtolower(str_replace(['T.A. ', ' ', '/'], ['', '-', '-'], "T.A. $semesterString $tahunString"));
+
+            // Check if all students in this angkatan have KRS
+            $totalStudents = Mahasiswa::where('tahun_masuk_awal', $tahun)
+                                      ->where('semester_masuk_awal', $semester)
+                                      ->count();
+
+            $studentsWithKrs = Mahasiswa::where('tahun_masuk_awal', $tahun)
+                                        ->where('semester_masuk_awal', $semester)
+                                        ->whereHas('krsRecords')
+                                        ->count();
+
+            $allHaveKrs = $totalStudents > 0 && $totalStudents === $studentsWithKrs;
+
             return (object) [
-                'nama_folder' => "TAHUN AJARAN $semesterString $tahunString",
-                'slug' => $tahun . '-' . $semester // Slug unik: "2023-1", "2023-2"
+                'nama_folder' => "Angkatan T.A. $semesterString $tahunString",
+                'tahun' => $tahun,
+                'semester' => $semester,
+                'slug' => $slug,
+                'all_have_krs' => $allHaveKrs
             ];
         });
 
@@ -46,36 +96,50 @@ class KrsController extends Controller
     /**
      * Menampilkan daftar mahasiswa per angkatan + semester.
      */
-    public function showAngkatan($slug)
+    public function showAngkatan(Request $request, $slug)
     {
-        // 1. Pecah slug "2023-1" kembali menjadi tahun dan semester
-        $parts = explode('-', $slug);
-        $tahun_awal = $parts[0] ?? null;
-        $semester_awal = $parts[1] ?? null;
+        // ... (fungsi showAngkatan tetap sama) ...
+        $search = trim($request->input('search'));
+        $parsed = $this->parseAngkatanSlug($slug);
 
-        if (!$tahun_awal || !$semester_awal) {
-            abort(404, 'Angkatan tidak valid.');
+        if (!$parsed) {
+            return redirect()->route('krs.index')->withErrors(['msg' => 'Format angkatan tidak valid.']);
         }
-
-        // 2. Cari mahasiswa yang cocok
-        $mahasiswa = Mahasiswa::where('tahun_masuk_awal', $tahun_awal)
-                              ->where('semester_masuk_awal', $semester_awal)
-                              ->orderBy('nama', 'asc')
-                              ->get();
         
-        // 3. Buat ulang nama folder untuk judul
-        $semesterString = ($semester_awal == 1) ? "GANJIL" : "GENAP";
-        $tahunString = $tahun_awal . '/' . ($tahun_awal + 1);
-        $nama_angkatan = "TAHUN AJARAN $semesterString $tahunString";
+        $tahun_awal = $parsed['tahun_awal'];
+        $semester_awal = $parsed['semester_awal'];
+        
+        $mahasiswaQuery = Mahasiswa::where('tahun_masuk_awal', $tahun_awal)
+                                   ->where('semester_masuk_awal', $semester_awal)
+                                   ->orderBy('nama', 'asc');
 
+        if ($search) {
+            $mahasiswaQuery->where(function ($q) use ($search) {
+                $q->where('nim', 'like', '%' . $search . '%')
+                  ->orWhere('nama', 'like', '%' . $search . '%');
+            });
+        }
+        
+        $mahasiswa = $mahasiswaQuery->get();
+        $semesterString = ($semester_awal == 1) ? "GANJIL" : "GENAP";
+        $namaAngkatan = "T.A. $semesterString $tahun_awal/" . ($tahun_awal + 1);
+
+        if ($request->ajax()) {
+            return view('krs._show_angkatan_table_rows', [
+                'mahasiswa' => $mahasiswa,
+                'slug' => $slug 
+            ])->render();
+        }
+        
         return view('krs.show_angkatan', [
-            'angkatan' => $nama_angkatan,
-            'slug' => $slug, // Kirim slug untuk tombol "Kembali"
-            'mahasiswa' => $mahasiswa
+            'mahasiswa' => $mahasiswa,
+            'angkatan' => $namaAngkatan,
+            'slug' => $slug,
+            'search' => $search 
         ]);
     }
 
-    // ... (fungsi editNilai tidak berubah) ...
+    // ... (fungsi editNilai, storeNilai, susunAngkatan, dan storeAngkatan tetap sama) ...
     public function editNilai(Mahasiswa $mahasiswa)
     {
         $matakuliah = Matakuliah::orderBy('semester', 'asc')->get();
@@ -90,7 +154,6 @@ class KrsController extends Controller
         ]);
     }
 
-    // ... (fungsi storeNilai tidak berubah) ...
     public function storeNilai(Request $request, Mahasiswa $mahasiswa)
     {
         $validated = $request->validate([ 'nilai' => 'nullable|array' ]);
@@ -106,7 +169,6 @@ class KrsController extends Controller
         
         $mahasiswa->nilaiMatakuliah()->sync($syncData);
 
-        // PERBAIKAN: Arahkan kembali ke halaman "Edit Nilai"
         return redirect()->route('krs.editNilai', $mahasiswa->nim)
                          ->with('success', 'Nilai berhasil disimpan.');
     }
@@ -116,10 +178,15 @@ class KrsController extends Controller
      */
     public function susunAngkatan($slug)
     {
-        // 1. Ambil data angkatan (mahasiswa)
-        $parts = explode('-', $slug);
-        $tahun_awal = $parts[0] ?? null;
-        $semester_awal = $parts[1] ?? null;
+        $parsed = $this->parseAngkatanSlug($slug);
+
+        if (!$parsed) {
+            return redirect()->route('krs.index')->withErrors(['msg' => 'Format angkatan tidak valid untuk penyusunan KRS.']);
+        }
+        
+        $tahun_awal = $parsed['tahun_awal'];
+        $semester_awal = $parsed['semester_awal'];
+
         $students = Mahasiswa::where('tahun_masuk_awal', $tahun_awal)
                              ->where('semester_masuk_awal', $semester_awal)
                              ->orderBy('nama', 'asc')
@@ -129,7 +196,6 @@ class KrsController extends Controller
             return redirect()->route('krs.index')->withErrors(['msg' => 'Tidak ada mahasiswa di angkatan ini.']);
         }
 
-        // 2. Ambil jadwal kelas permanen yang aktif
         $schedule = Schedule::where('is_permanent', true)
                             ->orderBy('created_at', 'desc')
                             ->first();
@@ -138,16 +204,12 @@ class KrsController extends Controller
             return back()->withErrors(['msg' => 'Admin belum mengatur Jadwal Kelas permanen.']);
         }
 
-        // 3. Ambil SEMUA data yang diperlukan
-        
-        // a. Daftar slot (kolom): Senin 18:00, Selasa 18:00...
         $slots = [
             'Senin 18:00–20:30', 'Selasa 18:00–20:30', 'Rabu 18:00–20:30', 
             'Kamis 18:00–20:30', 'Jumat 18:00–20:30', 'Sabtu 13:00–15:30', 
             'Sabtu 15:30–18:00', 'Sabtu 18:00–20:30'
         ];
         
-        // b. Kelas yang ditawarkan, di-grup berdasarkan slot
         $classes_by_slot = $schedule->entries()
                                     ->with('matakuliah', 'dosen')
                                     ->get()
@@ -155,40 +217,39 @@ class KrsController extends Controller
                                         return $entry->hari . ' ' . $entry->jam_slot;
                                     });
 
-        // c. Matakuliah tanpa slot (Publikasi, Seminar, Tesis)
-        $kode_mk_akhir = ['M1241111', 'M1241113', 'M1241109']; // Publikasi, Seminar, Tesis
-        $mk_tanpa_slot = Matakuliah::whereIn('kode_mk', $kode_mk_akhir) // <-- INI QUERY YANG BENAR
+        $kode_mk_akhir = ['M1241111', 'M1241113', 'M1241109'];
+        $mk_tanpa_slot = Matakuliah::whereIn('kode_mk', $kode_mk_akhir)
                                    ->orderBy('semester', 'asc')
                                    ->get();
         
-        // d. Ambil semua NIM mahasiswa di angkatan ini
         $student_nims = $students->pluck('nim');
 
-        // e. Ambil SEMUA nilai untuk SEMUA mahasiswa di angkatan ini (Efisien)
         $grades_map = DB::table('mahasiswa_matakuliah')
                         ->whereIn('mahasiswa_nim', $student_nims)
                         ->get()
                         ->groupBy('mahasiswa_nim')
                         ->map(fn($item) => $item->pluck('nilai', 'matakuliah_kode_mk'));
         
-        // f. Ambil KRS yang sudah disimpan sebelumnya (Efisien)
         $krs_map = KrsRecord::whereIn('mahasiswa_nim', $student_nims)
                             ->get()
                             ->groupBy('mahasiswa_nim');
 
-        // *** PERBAIKAN: Ambil daftar MK prasyarat untuk Tesis ***
-        // (Semua MK kecuali Tesis itu sendiri, yang di Sem 4)
         $mk_pra_tesis = Matakuliah::where('semester', '<', 4)->pluck('kode_mk');
+
+        $semesterString = ($semester_awal == 1) ? "GANJIL" : "GENAP";
+        $angkatan_nama = "T.A. $semesterString $tahun_awal/" . ($tahun_awal + 1);
 
         return view('krs.susun_angkatan', [
             'slug' => $slug,
-            'students' => $students,
-            'slots' => $slots,
+            'mahasiswa' => $students,
+            'angkatan' => $angkatan_nama,
+            'search' => '',
             'classes_by_slot' => $classes_by_slot,
+            'krs_map' => $krs_map,
             'mk_tanpa_slot' => $mk_tanpa_slot,
             'grades_map' => $grades_map,
-            'krs_map' => $krs_map,
-            'mk_pra_tesis' => $mk_pra_tesis // <-- Kirim data prasyarat ke view
+            'mk_pra_tesis' => $mk_pra_tesis,
+            'slots' => $slots
         ]);
     }
 
@@ -197,30 +258,28 @@ class KrsController extends Controller
      */
     public function storeAngkatan(Request $request, $slug)
     {
-        // Data yang datang:
-        // $request->krs[nim][slot_key] = schedule_entry_id
-        // $request->krs_mk[nim][] = matakuliah_kode_mk
-        
         $krs_data = $request->input('krs', []);
         $krs_mk_data = $request->input('krs_mk', []);
-        
-        $parts = explode('-', $slug);
-        $tahun_awal = $parts[0] ?? null;
-        $semester_awal = $parts[1] ?? null;
+
+        $parsed = $this->parseAngkatanSlug($slug);
+
+        if (!$parsed) {
+            return redirect()->back()->withErrors(['msg' => 'Format angkatan tidak valid untuk penyimpanan KRS.']);
+        }
+
+        $tahun_awal = $parsed['tahun_awal'];
+        $semester_awal = $parsed['semester_awal'];
         $student_nims = Mahasiswa::where('tahun_masuk_awal', $tahun_awal)
                                  ->where('semester_masuk_awal', $semester_awal)
                                  ->pluck('nim');
 
         DB::transaction(function () use ($student_nims, $krs_data, $krs_mk_data) {
             
-            // 1. Hapus SEMUA krs lama untuk SELURUH angkatan ini
             KrsRecord::whereIn('mahasiswa_nim', $student_nims)->delete();
-
             $recordsToInsert = [];
 
-            // 2. Proses data KRS (yang ada jadwalnya)
             foreach ($krs_data as $nim => $slots) {
-                if (!$student_nims->contains($nim)) continue; // Keamanan
+                if (!$student_nims->contains($nim)) continue;
                 
                 foreach ($slots as $schedule_entry_id) {
                     if (!empty($schedule_entry_id)) {
@@ -235,9 +294,8 @@ class KrsController extends Controller
                 }
             }
 
-            // 3. Proses data MK (Tesis, dll)
             foreach ($krs_mk_data as $nim => $matakuliahs) {
-                if (!$student_nims->contains($nim)) continue; // Keamanan
+                if (!$student_nims->contains($nim)) continue;
                 
                 foreach ($matakuliahs as $kode_mk) {
                     if (!empty($kode_mk)) {
@@ -252,60 +310,135 @@ class KrsController extends Controller
                 }
             }
             
-            // 4. Masukkan semua data baru dalam 1 query (Sangat Cepat)
             KrsRecord::insert($recordsToInsert);
         });
-        
+
         return redirect()->route('krs.showAngkatan', $slug)
                          ->with('success', 'KRS untuk angkatan ini berhasil disimpan.');
     }
 
     /**
-     * FUNGSI BARU UNTUK MENGUNDUH KRS ANGKATAN
+     * FUNGSI UNTUK MENGUNDUH KRS ANGKATAN (PDF) - FUNGSI UTAMA
      */
-    public function downloadAngkatan($slug)
+    public function downloadAngkatan(string $slug)
     {
-        // 1. Ambil data angkatan (mahasiswa)
-        $parts = explode('-', $slug);
-        $tahun_awal = $parts[0] ?? null;
-        $semester_awal = $parts[1] ?? null;
-        
-        $students = Mahasiswa::where('tahun_masuk_awal', $tahun_awal)
-                             ->where('semester_masuk_awal', $semester_awal)
-                             ->orderBy('nama', 'asc')
-                             ->get();
-        
-        if ($students->isEmpty()) {
-            return redirect()->route('krs.index')->withErrors(['msg' => 'Tidak ada mahasiswa di angkatan ini.']);
+        ini_set('memory_limit', '512M'); 
+        set_time_limit(300); 
+
+        try {
+            $parsed = $this->parseAngkatanSlug($slug);
+            
+            if (!$parsed) {
+                return redirect()->route('krs.index')->withErrors(['msg' => 'Format angkatan tidak valid.']);
+            }
+            $tahun_awal = $parsed['tahun_awal'];
+            $semester_awal = $parsed['semester_awal'];
+
+            $students = Mahasiswa::where('tahun_masuk_awal', $tahun_awal)
+                                 ->where('semester_masuk_awal', $semester_awal)
+                                 ->orderBy('nama', 'asc')
+                                 ->get();
+            
+            if ($students->isEmpty()) {
+                return redirect()->route('krs.index')->withErrors(['msg' => 'Tidak ada mahasiswa di angkatan ini.']);
+            }
+            
+            $student_nims = $students->pluck('nim');
+            $krs_records = KrsRecord::whereIn('mahasiswa_nim', $student_nims)
+                                    ->with('scheduleEntry.matakuliah', 'scheduleEntry.dosen', 'matakuliah')
+                                    ->get();
+            $krs_map = $krs_records->groupBy('mahasiswa_nim');
+            $semesterString = ($semester_awal == 1) ? "GANJIL" : "GENAP";
+            $fileName = 'KRS_Angkatan_' . $tahun_awal . '_' . $semesterString . '.pdf';
+            
+            $pdfData = [
+                'students' => $students,
+                'krs_map' => $krs_map,
+                'nama_angkatan' => "T.A. $semesterString $tahun_awal/" . ($tahun_awal + 1)
+            ];
+
+            // Render view, menggunakan kode view Anda yang asli.
+            $html = view('unduh.krs-angkatan', $pdfData)->render();
+            
+            $pdf = Pdf::loadHTML($html);
+            return $pdf->download($fileName); 
+
+        } catch (\Exception $e) {
+            // Ini akan menangkap error (bukan silent crash) jika ada bug view
+            return redirect()->back()->with('error', 'Gagal mengunduh PDF: ' . $e->getMessage() . ' File: ' . $e->getFile() . ' Baris: ' . $e->getLine());
         }
-        
-        // 2. Ambil data KRS yang sudah disimpan untuk semua mahasiswa ini
+    }
+
+    public function downloadAngkatanExcel(string $slug)
+    {
+        ini_set('memory_limit', '512M'); 
+        set_time_limit(300);
+
+        $parsed = $this->parseAngkatanSlug($slug);
+
+        if (!$parsed) {
+            return redirect()->back()->withErrors(['msg' => 'Format angkatan tidak valid.']);
+        }
+
+        $tahun_awal = $parsed['tahun_awal'];
+        $semester_awal = $parsed['semester_awal'];
+
+        $students = Mahasiswa::where('tahun_masuk_awal', $tahun_awal)
+            ->where('semester_masuk_awal', $semester_awal)
+            ->orderBy('nama', 'asc')
+            ->get();
+
+        if ($students->isEmpty()) {
+            return redirect()->back()->withErrors(['msg' => 'Tidak ada mahasiswa di angkatan ini.']);
+        }
+
         $student_nims = $students->pluck('nim');
-        
+
         $krs_records = KrsRecord::whereIn('mahasiswa_nim', $student_nims)
-                                ->with(
-                                    'scheduleEntry.matakuliah', // Relasi bertingkat
-                                    'scheduleEntry.dosen',      // Relasi bertingkat
-                                    'matakuliah' // Untuk Tesis, dll.
-                                ) 
-                                ->get();
-        
-        // 3. Kelompokkan KRS berdasarkan mahasiswa
+            ->with('scheduleEntry.matakuliah', 'scheduleEntry.dosen', 'matakuliah')
+            ->get();
+
         $krs_map = $krs_records->groupBy('mahasiswa_nim');
 
-        // 4. Buat nama file
         $semesterString = ($semester_awal == 1) ? "GANJIL" : "GENAP";
-        $fileName = 'KRS_Angkatan_' . $tahun_awal . '_' . $semesterString . '.pdf';
+        $nama_angkatan = "T.A. $semesterString $tahun_awal/" . ($tahun_awal + 1);
 
-        // 5. Render view-nya menjadi HTML
-        $pdf = Pdf::loadView('unduh.krs-angkatan', [
-            'students' => $students,
-            'krs_map' => $krs_map,
-            'nama_angkatan' => "T.A. $semesterString $tahun_awal/" . ($tahun_awal + 1)
+        return Excel::download(
+            new KrsAngkatanExport($students, $krs_map, $nama_angkatan),
+            'KRS_Angkatan_' . $tahun_awal . '_' . $semesterString . '.xlsx'
+        );
+    }
+
+    public function importNilai(Request $request, Mahasiswa $mahasiswa)
+    {
+        \Log::info('ImportNilai method called for mahasiswa: ' . $mahasiswa->nim);
+
+        $request->validate([
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:10240', // Max 10MB
         ]);
-        
-        // 6. Download file (bukan landscape agar muat per halaman)
-        return $pdf->download($fileName);
+
+        \Log::info('File validation passed. File: ' . $request->file('excel_file')->getClientOriginalName());
+
+        try {
+            \Log::info('Starting Excel import...');
+            Excel::import(new NilaiMahasiswaImport($mahasiswa), $request->file('excel_file'));
+            \Log::info('Excel import completed successfully');
+
+            return redirect()->back()->with('success', 'Nilai berhasil diimpor dari Excel.');
+        } catch (\Exception $e) {
+            \Log::error('Import failed with exception: ' . $e->getMessage());
+            \Log::error('Exception trace: ' . $e->getTraceAsString());
+            return redirect()->back()->withErrors(['msg' => 'Gagal mengimpor nilai: ' . $e->getMessage()]);
+        }
+    }
+
+    public function downloadTemplateNilai()
+    {
+        try {
+            return Excel::download(new TemplateNilaiExport(), 'template_nilai.xlsx');
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
 }

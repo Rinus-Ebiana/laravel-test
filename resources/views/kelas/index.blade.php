@@ -76,7 +76,9 @@
     @endforeach
 
     <div class="container mt-4 mb-5 d-flex justify-content-end gap-2" style="max-width:1300px;">
-      <button class="btn btn-custom px-4" onclick="window.location.href='{{ route('kelas.download') }}'">Unduh</button>
+      <button type="button" class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#modalDownloadKelas">
+        Unduh
+      </button>
       <button class="btn btn-custom px-4" id="btnSimpanKelas">Simpan</button>
     </div>
   @endif
@@ -145,5 +147,50 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+</script>
+
+<div class="modal fade" id="modalDownloadKelas" tabindex="-1" aria-labelledby="modalDownloadKelasLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+          <div class="modal-header">
+              <h5 class="modal-title" id="modalDownloadKelasLabel">
+                  Unduh Jadwal Kelas
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <div class="modal-body text-center">
+              <p>Silakan pilih format file:</p>
+
+              <button
+                  type="button"
+                  class="btn btn-primary me-2"
+                  onclick="downloadFile('{{ route('kelas.download') }}')">
+                  Unduh PDF
+              </button>
+
+              <button
+                  type="button"
+                  class="btn btn-primary"
+                  onclick="downloadFile('{{ route('kelas.downloadExcel') }}')">
+                  Unduh Excel
+              </button>
+          </div>
+
+      </div>
+  </div>
+</div>
+
+<script>
+function downloadFile(url) {
+    // Tutup modal
+    const modalEl = document.getElementById('modalDownloadKelas');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+
+    // Mulai download
+    window.location.href = url;
+}
 </script>
 @endpush

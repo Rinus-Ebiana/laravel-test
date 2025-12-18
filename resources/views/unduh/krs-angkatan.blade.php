@@ -74,10 +74,11 @@
               <tr>
                 @if($krs->scheduleEntry)
                   {{-- Ini adalah MK dengan jadwal kelas --}}
-                  <td>{{ $krs->scheduleEntry->matakuliah->kode_mk }}</td>
-                  <td class="text-start">{{ $krs->scheduleEntry->matakuliah->nama_mk }}</td>
-                  <td>{{ $krs->scheduleEntry->matakuliah->sks }}</td>
-                  <td class="text-start">{{ $krs->scheduleEntry->dosen->nama }}</td>
+                  {{-- PERBAIKAN KRITIS: Gunakan operator Nullsafe (?->) --}}
+                  <td>{{ $krs->scheduleEntry->matakuliah?->kode_mk }}</td>
+                  <td class="text-start">{{ $krs->scheduleEntry->matakuliah?->nama_mk }}</td>
+                  <td>{{ $krs->scheduleEntry->matakuliah?->sks }}</td>
+                  <td class="text-start">{{ $krs->scheduleEntry->dosen?->nama }}</td>
                   <td>{{ $krs->scheduleEntry->hari }}</td>
                   <td>{{ $krs->scheduleEntry->jam_slot }}</td>
                   <td>{{ $krs->scheduleEntry->kode_kelas }}</td>

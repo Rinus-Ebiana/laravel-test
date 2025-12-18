@@ -61,8 +61,10 @@
 
   @if($schedule)
     <div class="container mt-4 mb-5 d-flex justify-content-end gap-2" style="max-width:1300px;">
-      <button class="btn btn-custom px-4" onclick="window.location.href='{{ route('jadwal.downloadPerDosen', $schedule->id) }}'">Unduh Per Dosen</button>
-      <button class="btn btn-custom px-4" onclick="window.location.href='{{ route('jadwal.downloadSemua', $schedule->id) }}'">Unduh Semua</button>
+      <button class="btn btn-custom px-4" onclick="window.location.href='{{ route('jadwal.downloadPerDosen', $schedule->id) }}'">Unduh Per Dosen (PDF)</button>
+      <button class="btn btn-custom px-4" onclick="window.location.href='{{ route('jadwal.downloadSemua', $schedule->id) }}'">Unduh Semua (PDF)</button>
+      <button class="btn btn-custom px-4" onclick="window.location.href='{{ route('jadwal.downloadPerDosenExcel', $schedule->id) }}'">Unduh Per Dosen (Excel)</button>
+      <button class="btn btn-custom px-4" onclick="window.location.href='{{ route('jadwal.downloadSemuaExcel', $schedule->id) }}'">Unduh Semua (Excel)</button>
     </div>
   @endif
 @endsection

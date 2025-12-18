@@ -179,7 +179,7 @@ class MahasiswaController extends Controller
                 'string',
                 'regex:~T\.A\. (GANJIL|GENAP) \d{4}/\d{4}~i' // Sekarang aman di dalam array
             ],
-            'no_telp' => ['nullable', 'string', 'max:20'],
+            'status' => ['required', 'in:aktif,mengundurkan_diri,drop_out,lulus'],
         ]);
 
         // 2. Parse string tahun masuk
@@ -206,6 +206,20 @@ class MahasiswaController extends Controller
         $mahasiswa->delete();
         return redirect()->route('mahasiswa.index')
                          ->with('success', 'Data mahasiswa berhasil dihapus.');
+    }
+
+    /**
+     * Update status mahasiswa via AJAX
+     */
+    public function updateStatus(Request $request, Mahasiswa $mahasiswa)
+    {
+        $request->validate([
+            'status' => 'required|in:aktif,mengundurkan_diri,drop_out,lulus'
+        ]);
+
+        $mahasiswa->update(['status' => $request->status]);
+
+        return response()->json(['success' => true, 'message' => 'Status berhasil diperbarui']);
     }
     
     // ... (fungsi showImportForm() dan storeImport() Anda tidak berubah)

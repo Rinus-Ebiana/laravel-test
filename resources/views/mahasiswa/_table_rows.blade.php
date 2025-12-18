@@ -13,8 +13,22 @@
         </a>
     </td>
     
-    <td>{{ $m->no_telp }}</td>
-    <td class="text-start">{{ $m->email }}</td>
+    <td>
+        <form action="{{ route('mahasiswa.updateStatus', $m) }}" method="POST" class="d-inline">
+            @csrf
+            @method('PATCH')
+            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="aktif" {{ $m->status == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                <option value="mengundurkan_diri" {{ $m->status == 'mengundurkan_diri' ? 'selected' : '' }}>Mengundurkan Diri</option>
+                <option value="drop_out" {{ $m->status == 'drop_out' ? 'selected' : '' }}>Drop Out</option>
+                <option value="lulus" {{ $m->status == 'lulus' ? 'selected' : '' }}>Lulus</option>
+            </select>
+        </form>
+    </td>
+    <td>
+        <a href="{{ route('mahasiswa.edit', $m) }}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-nim="{{ $m->nim }}" data-nama="{{ $m->nama }}">Hapus</button>
+    </td>
 </tr>
 @empty
 <tr>

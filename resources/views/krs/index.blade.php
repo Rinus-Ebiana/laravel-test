@@ -5,12 +5,12 @@
   <br><br>
 
   <div class="container ta-container mb-5">
-    
-    {{-- $angkatan sekarang adalah objek [ {nama_folder, slug} ] --}}
+
+    {{-- $angkatan sekarang adalah objek [ {nama_folder, slug, all_have_krs} ] --}}
     @forelse($angkatan as $item)
       <div class="ta-wrapper">
         {{-- Link menggunakan slug baru --}}
-        <a href="{{ route('krs.showAngkatan', $item->slug) }}" class="ta-button">{{ $item->nama_folder }}</a>
+        <a href="{{ route('krs.showAngkatan', $item->slug) }}" class="ta-button {{ $item->all_have_krs ? 'ta-button-completed' : '' }}">{{ $item->nama_folder }}</a>
       </div>
     @empty
       <p class="text-center">Belum ada data mahasiswa.</p>
@@ -31,6 +31,9 @@
   .ta-button:hover {
     background-color: #101F6A; border-color: #101F6A;
     color: #ffffff;
+  }
+  .ta-button-completed {
+    background-color: #7d7d7d; /* Slightly darker gray background */
   }
   .ta-container {
     display: grid; grid-template-columns: repeat(2, 1fr);

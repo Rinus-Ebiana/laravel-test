@@ -24,6 +24,7 @@ class Mahasiswa extends Model
         'semester_masuk_awal', // Diubah
         'no_telp',
         'email',
+        'status',
     ];
 
     /**

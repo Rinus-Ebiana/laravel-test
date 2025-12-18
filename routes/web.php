@@ -52,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/mahasiswa/import', [MahasiswaController::class, 'showImportForm'])->name('mahasiswa.importForm');
     Route::post('/mahasiswa/import', [MahasiswaController::class, 'storeImport'])->name('mahasiswa.storeImport');
     Route::resource('mahasiswa', MahasiswaController::class);
+    Route::patch('/mahasiswa/{mahasiswa}/status', [MahasiswaController::class, 'updateStatus'])->name('mahasiswa.updateStatus');
     Route::resource('matakuliah', MatakuliahController::class);
 
     // ===== RUTR JADWAL LENGKAP =====
@@ -72,6 +73,8 @@ Route::middleware(['auth'])->group(function () {
     // Download
     Route::get('/jadwal/{schedule}/download-semua', [JadwalController::class, 'downloadSemua'])->name('jadwal.downloadSemua');
     Route::get('/jadwal/{schedule}/download-dosen', [JadwalController::class, 'downloadPerDosen'])->name('jadwal.downloadPerDosen');
+    Route::get('/jadwal/{schedule}/download-semua/excel', [JadwalController::class, 'downloadSemuaExcel'])->name('jadwal.downloadSemuaExcel');
+    Route::get('/jadwal/{schedule}/download-dosen/excel', [JadwalController::class, 'downloadPerDosenExcel'])->name('jadwal.downloadPerDosenExcel');
 
     Route::get('/kelas', [KelasController::class, 'index'])->name('kelas.index');
     Route::get('/kelas', [KelasController::class, 'index'])->name('kelas.index');
@@ -79,6 +82,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/kelas/update', [KelasController::class, 'update'])->name('kelas.update');
     // Rute baru untuk mengunduh
     Route::get('/kelas/download', [KelasController::class, 'download'])->name('kelas.download');
+    Route::get('/kelas/download/excel', [KelasController::class, 'downloadExcel'])->name('kelas.downloadExcel');
 
     Route::get('/krs', [KrsController::class, 'index'])->name('krs.index');
     Route::get('/krs/angkatan/{slug}', [KrsController::class, 'showAngkatan'])->name('krs.showAngkatan');
@@ -86,11 +90,15 @@ Route::middleware(['auth'])->group(function () {
     // Rute Halaman Nilai (Tetap per mahasiswa)
     Route::get('/krs/mahasiswa/{mahasiswa}/nilai', [KrsController::class, 'editNilai'])->name('krs.editNilai');
     Route::post('/krs/mahasiswa/{mahasiswa}/nilai', [KrsController::class, 'storeNilai'])->name('krs.storeNilai');
+    Route::post('/krs/mahasiswa/{mahasiswa}/nilai/import', [KrsController::class, 'importNilai'])->name('krs.importNilai');
+    // Temporarily public for testing
+    Route::get('/krs/download-template-nilai', [KrsController::class, 'downloadTemplateNilai'])->name('krs.downloadTemplateNilai');
 
     // Rute Susun KRS (BARU - Per Angkatan)
     Route::get('/krs/angkatan/{slug}/susun', [KrsController::class, 'susunAngkatan'])->name('krs.susunAngkatan');
     Route::post('/krs/angkatan/{slug}/susun', [KrsController::class, 'storeAngkatan'])->name('krs.storeAngkatan');
 
     Route::get('/krs/angkatan/{slug}/download', [KrsController::class, 'downloadAngkatan'])->name('krs.downloadAngkatan');
+    Route::get('/krs/download/{slug}/excel', [KrsController::class, 'downloadAngkatanExcel'])->name('krs.downloadAngkatanExcel');
 
 });

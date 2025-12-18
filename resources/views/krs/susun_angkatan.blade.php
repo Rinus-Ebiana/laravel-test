@@ -9,7 +9,7 @@
     </button>
   </div>
 
-  <h4 class="fw-semibold mb-3 text-center">Susun KRS Angkatan</h4>
+  <h4 class="fw-semibold mb-3 text-center">Susun KRS Angkatan {{ $angkatan }}</h4>
 
   <form method="POST" action="{{ route('krs.storeAngkatan', $slug) }}">
     @csrf
@@ -41,7 +41,7 @@
           </thead>
           <tbody class="bg-white">
             
-            @foreach($students as $student)
+            @foreach($mahasiswa as $student)
               @php
                 // Ambil data penting untuk mahasiswa ini
                 $mahasiswaSemester = $student->semester;
@@ -86,7 +86,7 @@
                               // 4. Tampilkan HANYA JIKA belum lulus
                               if (!$is_passed) {
                                   echo "<option value='{$class->id}' ".($isSelected ? 'selected' : '').">
-                                          {$class->kode_kelas} ({$mk->kode_mk})
+                                          {$class->kode_kelas} ({$mk->kode_mk} - {$mk->nama_mk})
                                         </option>";
                               }
                           }

@@ -7,6 +7,8 @@ use App\Models\Schedule;
 use App\Models\ScheduleEntry;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf; // Impor PDF
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\KelasExport;
 
 class KelasController extends Controller
 {
@@ -102,5 +104,30 @@ class KelasController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         return $pdf->download($fileName);
+    }
+
+    /**
+     * Mengunduh jadwal kelas sebagai Excel.
+     */
+    public function downloadExcel()
+    {
+        $latestPermanentSchedule = Schedule::where('is_permanent', true)
+                                           ->orderBy('created_at', 'desc')
+                                           ->first();
+
+        if (!$latestPermanentSchedule) {
+            return redirect()->route('kelas.index')->withErrors(['msg' => 'Tidak ada jadwal permanen.']);
+        }
+
+        $entries = $latestPermanentSchedule->entries()->with('matakuliah', 'dosen')->get();
+        $entriesBySemester = $entries->sortBy('matakuliah.semester')
+                                     ->groupBy(function($entry) {
+                                         return $entry->matakuliah->semester;
+                                     });
+
+        $safeName = str_replace(['/', '\\'], '_', $latestPermanentSchedule->nama_jadwal);
+        $fileName = 'Jadwal_Kelas_' . $safeName . '.xlsx';
+
+        return Excel::download(new KelasExport($latestPermanentSchedule, $entriesBySemester), $fileName);
     }
 }

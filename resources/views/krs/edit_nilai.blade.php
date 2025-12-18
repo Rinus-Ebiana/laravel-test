@@ -30,10 +30,24 @@
     </div>
   </div>
   
+  <div class="container mt-3 d-flex justify-content-between align-items-center">
+    {{-- Import Excel Form --}}
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ route('krs.downloadTemplateNilai') }}" class="btn btn-outline-secondary btn-sm">Download Template</a>
+      <form method="POST" action="{{ route('krs.importNilai', $mahasiswa->nim) }}" enctype="multipart/form-data" class="d-inline">
+        @csrf
+        <input type="file" name="excel_file" accept=".xlsx,.xls" class="form-control form-control-sm d-inline-block" style="width: 200px;" required>
+        <button type="submit" class="btn btn-outline-primary btn-sm">Import Excel</button>
+      </form>
+    </div>
+
+    {{-- Tombol "Susun KRS" dipindah ke halaman angkatan --}}
+    <div></div> {{-- Placeholder for spacing --}}
+  </div>
+
   <form method="POST" action="{{ route('krs.storeNilai', $mahasiswa->nim) }}">
     @csrf
-    <div class="container mt-3 d-flex justify-content-end align-items-center" ...>
-      {{-- Tombol "Susun KRS" dipindah ke halaman angkatan --}}
+    <div class="container mt-3 d-flex justify-content-end align-items-center">
       <button type="submit" id="saveButton" class="btn btn-custom px-4">Simpan Nilai</button>
     </div>
 

@@ -1,12 +1,20 @@
-// Fungsi Pop Up User Profile
+// File: main.js
+
+// FIX KRITIS: Global Execution Flag. Mencegah kode dijalankan dua kali jika file di-load dua kali.
+if (window.__MAIN_JS_INITIALIZED) {
+    // Jika flag sudah ada, hentikan eksekusi script ini (kecuali definisi fungsi)
+    console.warn("main.js terdeteksi dimuat lebih dari sekali. Menghentikan inisialisasi ganda.");
+} else {
+    window.__MAIN_JS_INITIALIZED = true;
+}
+
+
+// Fungsi Pop Up User Profile (TIDAK BERUBAH)
 function initUserPopup() {
   const userIcon = document.getElementById('userIcon');
   const userPopup = document.getElementById('userPopup');
-  const btnProfile = document.getElementById('btnProfile');
-  const btnLogout = document.getElementById('btnLogout');
 
   if (!userIcon || !userPopup) {
-    // console.error("Elemen popup user tidak ditemukan.");
     return;
   }
 
@@ -18,7 +26,7 @@ function initUserPopup() {
 
     const rect = userIcon.getBoundingClientRect();
     const top = rect.bottom + window.scrollY + 10;
-    const left = rect.right - userPopup.offsetWidth + window.scrollX - 100; // Penyesuaian offset
+    const left = rect.right - userPopup.offsetWidth + window.scrollX - 100;
 
     userPopup.style.position = 'absolute';
     userPopup.style.top = `${top}px`;
@@ -31,68 +39,29 @@ function initUserPopup() {
       userPopup.classList.remove('show');
     }
   });
-
-  // Navigasi ke halaman profil (Biarkan ini dikelola oleh Blade)
-  // if (btnProfile) {
-  //   btnProfile.addEventListener('click', () => {
-  //     window.location.href = "profile.html"; // Dikelola oleh Blade/HTML
-  //   });
-  // }
-
-  // Logout (Biarkan ini dikelola oleh form Blade)
-  // if (btnLogout) {
-  //   btnLogout.addEventListener('click', () => {
-  //     // ... Dikelola oleh Form Blade
-  //   });
-  // }
 }
 
-// Fungsi Sorting dan Search (Tidak berubah, hanya dipindahkan)
+// Fungsi Sorting (Fungsi updateCellCounters dan semua panggilannya DIHAPUS)
 function initSearchAndSort() {
-  // --- Bagian Search Bar ---
-  // const container = document.getElementById('searchSection');
-  // if (container) {
-  //   const tableId = container.getAttribute('data-target');
-  //   const addPage = container.getAttribute('data-add'); // Ini adalah URL
+  
+  // Helper untuk membersihkan dan mengambil nilai teks (sangat robust)
+  const cleanText = (cell) => {
+      if (!cell) return '';
+      let text = cell.textContent || ''; 
+      text = text.replace(/\xA0/g, ' ').replace(/\s+/g, ' ').trim(); 
+      return text;
+  };
 
-  //   let htmlContent = `
-  //     <div class="container search-section">
-  //       <div class="search-bar">
-  //         <input type="text" id="searchInput" class="form-control" placeholder="Cari data...">
-  //         <i class="bi bi-search"></i>
-  //       </div>
-  //   `;
-  //   if (addPage && addPage !== "none") {
-  //     htmlContent += `<button class="btn btn-custom" id="btnTambah">Tambah</button>`;
-  //   }
-  //   htmlContent += `</div>`;
-  //   container.innerHTML = htmlContent;
-
-  //   const btnTambah = document.getElementById('btnTambah');
-  //   if (btnTambah) {
-  //     // Sekarang kita gunakan URL dari 'data-add'
-  //     btnTambah.addEventListener('click', () => window.location.href = addPage);
-  //   }
-
-  //   const searchInput = document.getElementById('searchInput');
-  //   if (searchInput && tableId) {
-  //     searchInput.addEventListener('input', () => {
-  //       const filter = searchInput.value.toLowerCase();
-  //       const rows = document.querySelectorAll(`#${tableId} tbody tr`);
-  //       rows.forEach(row => {
-  //         const text = row.textContent.toLowerCase();
-  //         row.style.display = text.includes(filter) ? '' : 'none';
-  //       });
-  //     });
-  //   }
-  // }
-
-  // --- Bagian Sorting ---
+  // 2. Bagian Sorting
   document.querySelectorAll('.btn-sort').forEach(button => {
-    button.addEventListener('click', () => {
+    // Hapus listener lama untuk mencegah double listener pada AJAX refresh
+    button.removeEventListener('click', button.clickHandler); 
+
+    const clickHandler = () => {
       const table = button.closest('table');
       const tbody = table.querySelector('tbody');
-      const columnIndex = parseInt(button.dataset.column);
+      
+      const columnIndex = parseInt(button.dataset.column); 
       const isAscending = !button.classList.contains('asc');
 
       table.querySelectorAll('.btn-sort').forEach(btn => btn.classList.remove('active', 'asc', 'desc'));
@@ -101,96 +70,110 @@ function initSearchAndSort() {
       const rows = Array.from(tbody.querySelectorAll('tr'));
 
       rows.sort((a, b) => {
-        const A = a.children[columnIndex].innerText.trim().toLowerCase();
-        const B = b.children[columnIndex].innerText.trim().toLowerCase();
-        return isAscending ? A.localeCompare(B) : B.localeCompare(A);
-      });
+        let comparison = 0;
 
+        // --- LOGIKA SORTING STANDAR (Numerik atau Teks) ---
+        const textA = cleanText(a.children[columnIndex]);
+        const textB = cleanText(b.children[columnIndex]);
+
+        const valA = parseFloat(textA);
+        const valB = parseFloat(textB);
+
+        const isNumeric = !isNaN(valA) && isFinite(valA) && !isNaN(valB) && isFinite(valB);
+
+        if (isNumeric) {
+            comparison = valA - valB;
+        } else {
+            comparison = textA.localeCompare(textB, 'id', { sensitivity: 'base' });
+        }
+
+        // Terapkan arah sorting
+        return isAscending ? comparison : comparison * -1;
+      }
+      );
+
+      // Sisipkan baris yang sudah diurutkan kembali ke tbody
       rows.forEach(row => tbody.appendChild(row));
-    });
+      
+      // updateCellCounters() DIHAPUS DI SINI. Penomoran dikelola oleh View.
+    };
+
+    button.addEventListener('click', clickHandler);
+    button.clickHandler = clickHandler; // Simpan reference handler
   });
 }
 
 // ================== EKSEKUSI SAAT HALAMAN DIMUAT ==================
 document.addEventListener('DOMContentLoaded', function() {
   
-  // 1. Jalankan fungsi popup user
-  initUserPopup();
+  // Jika flag tidak diinisialisasi (berarti ini adalah script pertama), baru jalankan
+  if (window.__MAIN_JS_INITIALIZED) {
+    
+    // 1. Jalankan fungsi popup user
+    initUserPopup();
 
-  // 2. Jalankan fungsi search dan sort
-  initSearchAndSort();
+    // updateCellCounters() DIHAPUS DI SINI. Penomoran dikelola oleh View.
 
-  // 3. Tambahkan class 'loaded' ke body
-  document.body.classList.add('loaded');
+    // 2. Jalankan fungsi search dan sort (hanya inisialisasi listener)
+    initSearchAndSort();
 
-  // 4. FIX BARU: Logic Live Search dengan Debounce
-  const searchInput = document.getElementById('searchInput');
-  const tableBody = document.getElementById('tableBody');
-  const searchForm = document.getElementById('searchForm'); // Ambil form
+    // 3. Tambahkan class 'loaded' ke body
+    document.body.classList.add('loaded');
 
-  if (searchInput && tableBody && searchForm) {
-      let timeout = null;
-      let lastSearchValue = searchInput.value; // Menyimpan nilai pencarian terakhir
-      
-      const performSearch = function (searchValue) {
-          
-          // Memastikan hanya query baru yang diproses
-          if (searchValue === lastSearchValue) {
-              return;
-          }
-          lastSearchValue = searchValue;
-          
-          // Dapatkan URL saat ini (misalnya /dosen)
-          const url = searchForm.getAttribute('action');
-          // Tambahkan parameter AJAX dan search
-          const fetchUrl = `${url}?search=${encodeURIComponent(searchValue)}&ajax=1`; 
-          
-          // Kirim permintaan AJAX
-          fetch(fetchUrl, {
-              headers: {
-                  'X-Requested-With': 'XMLHttpRequest' // Header Laravel untuk mendeteksi AJAX
-              }
-          })
-          .then(response => response.text())
-          .then(html => {
-              // Ganti isi tbody dengan hasil yang baru
-              tableBody.innerHTML = html; 
-              
-              // Panggil kembali initSearchAndSort untuk penomoran ulang (cell-counter)
-              initSearchAndSort();
-          })
-          .catch(error => {
-              console.error('Error saat melakukan pencarian AJAX:', error);
-          });
-      };
+    // 4. Logic Live Search dengan Debounce
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('tableBody');
+    const searchForm = document.getElementById('searchForm'); 
 
-      // Listener untuk input
-      searchInput.addEventListener('input', function () {
-          clearTimeout(timeout);
+    if (searchInput && tableBody && searchForm) {
+        let timeout = null;
+        let lastSearchValue = searchInput.value; 
+        
+        const performSearch = function (searchValue) {
+            
+            if (searchValue === lastSearchValue) {
+                return;
+            }
+            lastSearchValue = searchValue;
+            
+            const url = searchForm.getAttribute('action');
+            const fetchUrl = `${url}?search=${encodeURIComponent(searchValue)}&ajax=1`; 
+            
+            fetch(fetchUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                tableBody.innerHTML = html; 
+                
+                // updateCellCounters() DIHAPUS DI SINI.
+                initSearchAndSort(); 
+            })
+            .catch(error => {
+                console.error('Error saat melakukan pencarian AJAX:', error);
+            });
+        };
 
-          // Simpan posisi cursor sebelum timeout
-          const currentCursorPosition = searchInput.selectionStart;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timeout);
+            const currentCursorPosition = searchInput.selectionStart;
 
-          timeout = setTimeout(function () {
-              const searchValue = searchInput.value;
-              performSearch(searchValue);
-              
-              // KUNCI FIX: Kembalikan fokus dan posisi cursor setelah AJAX selesai
-              // Karena tidak ada page refresh, kita hanya perlu memastikan fokus tetap ada.
-              searchInput.focus();
-              searchInput.setSelectionRange(currentCursorPosition, currentCursorPosition);
-              
-          }, 300); // Jeda 300ms
+            timeout = setTimeout(function () {
+                performSearch(searchInput.value);
+                
+                searchInput.focus();
+                searchInput.setSelectionRange(currentCursorPosition, currentCursorPosition);
+                
+            }, 300); 
 
-      });
-      
-      // Mencegah submit form secara tradisional saat tombol enter ditekan (jika masih ada)
-      searchForm.addEventListener('submit', function(e) {
-          e.preventDefault(); 
-          // Jika enter ditekan, langsung panggil pencarian tanpa menunggu debounce
-          performSearch(searchInput.value);
-      });
+        });
+        
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            performSearch(searchInput.value);
+        });
+    }
   }
-
-  // (Fungsi initNavButtons() tidak diperlukan lagi, diganti oleh Blade)
 });

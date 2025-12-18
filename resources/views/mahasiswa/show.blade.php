@@ -10,35 +10,49 @@
     </button>
   </div>
 
-  <div class="container mt-3">
-    <div class="table-responsive">
-      <table class="table align-middle text-center custom-table table-mahasiswa">
-        <thead>
-          <tr>
-            <th>Semester</th>
-            <th>NIM</th>
-            <th>Nama</th>
-            <th>No Telp</th>
-            <th>Email</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white">
-          <tr>
-            <td>{{ $mahasiswa->semester }}</td> <td>{{ $mahasiswa->nim }}</td>
-            <td>{{ $mahasiswa->nama }}</td>
-            <td>{{ $mahasiswa->no_telp }}</td>
-            <td>{{ $mahasiswa->email }}</td>
-            <td>
-              <div class="d-flex justify-content-center gap-2 icon-action">
-                <a href="{{ route('mahasiswa.edit', $mahasiswa->nim) }}" class="icon-btn edit"><i class="bi bi-pencil-square fs-5"></i></a>
-                <a href="#" class="icon-btn delete" data-bs-toggle="modal" data-bs-target="#deleteModal"><i
-                    class="bi bi-trash fs-5"></i></a>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="profile-container">
+    <h6 class="fw-bold mb-5" style="text-decoration: underline; text-underline-offset: 4px;">Detail Mahasiswa</h6>
+
+    <div class="mb-4 d-flex align-items-start">
+      <label class="fw-bold text-start" style="min-width: 130px;">NIM</label>
+      <span class="me-2">:</span>
+      <span class="text-start">{{ $mahasiswa->nim }}</span>
+    </div>
+
+    <div class="mb-4 d-flex align-items-start">
+      <label class="fw-bold text-start" style="min-width: 130px;">Nama</label>
+      <span class="me-2">:</span>
+      <span class="text-start">{{ $mahasiswa->nama }}</span>
+    </div>
+
+    <div class="mb-4 d-flex align-items-start">
+      <label class="fw-bold text-start" style="min-width: 130px;">Semester</label>
+      <span class="me-2">:</span>
+      <span class="text-start">{{ $mahasiswa->semester }}</span>
+    </div>
+
+    <div class="mb-4 d-flex align-items-start">
+      <label class="fw-bold text-start" style="min-width: 130px;">Tahun Masuk</label>
+      <span class="me-2">:</span>
+      <span class="text-start">{{ $mahasiswa->tahun_masuk_string }}</span>
+    </div>
+
+    <div class="mb-4 d-flex align-items-start">
+      <label class="fw-bold text-start" style="min-width: 130px;">No Telp</label>
+      <span class="me-2">:</span>
+      <span class="text-start">{{ $mahasiswa->no_telp }}</span>
+    </div>
+
+    <div class="mb-4 d-flex align-items-start">
+      <label class="fw-bold text-start" style="min-width: 130px;">Email</label>
+      <span class="me-2">:</span>
+      <span class="text-start">{{ $mahasiswa->email }}</span>
+    </div>
+
+    <div class="btn-wrapper">
+      {{-- <button type="button" class="btn btn-custom px-4 me-1" id="btnBatal" onclick="window.history.back()">Batal</button> --}}
+      <a href="{{ route('mahasiswa.edit', $mahasiswa->nim) }}" class="btn btn-custom px-4">Edit</a>
+      <button class="btn btn-custom px-4" data-bs-toggle="modal" data-bs-target="#deleteModal">Hapus</button>
     </div>
   </div>
 

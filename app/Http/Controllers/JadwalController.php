@@ -9,6 +9,9 @@ use App\Models\ScheduleEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\JadwalSemuaExport;
+use App\Exports\JadwalDosenExport;
 
 class JadwalController extends Controller
 {

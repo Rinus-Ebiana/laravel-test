@@ -2,6 +2,8 @@
 @section('title', 'Detail KRS Angkatan')
 
 @section('content')
+
+
   <div class="container mt-5">
     <button class="btn-back d-flex align-items-center gap-1 px-0" onclick="window.location.href='{{ route('krs.index') }}'">
       <i class="bi bi-chevron-left" style="font-size: 1.2rem;"></i>
@@ -9,58 +11,89 @@
     </button>
   </div>
 
-  <h3 class="text-center fw-semibold mt-4 mb-4">{{ $angkatan }}</h3>
+  <h4 class="fw-semibold mb-3 text-center">Angkatan {{ $angkatan }}</h4>
 
-  <div class="container search-section">
-    <div class="search-bar">
-      <input type="text" id="searchInput" class="form-control" placeholder="Cari mahasiswa...">
-      <i class="bi bi-search"></i>
-    </div>
-    
-    <a href="{{ route('krs.downloadAngkatan', $slug) }}" class="btn btn-custom px-4" style="margin-top: 0; height: 38px;">Unduh KRS</a>
-    <a href="{{ route('krs.susunAngkatan', $slug) }}" class="btn btn-custom px-4" style="margin-top: 0; height: 38px;">Susun KRS</a>
-  </div>
+<div class="container search-section">
+  <form action="{{ route('krs.showAngkatan', $slug) }}" method="GET" class="search-bar" id="searchForm" style="position: relative;"> 
+    <input type="text" 
+           name="search" 
+           id="searchInput" 
+           class="form-control" 
+           placeholder="Cari NIM atau Nama Mahasiswa..."
+           value="{{ $search ?? '' }}"
+           style="padding-left: 35px;"> 
+    <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 10;"></i>
+  </form>
+  
+  <button type="button" class="btn btn-custom" data-bs-toggle="modal" data-bs-target="#modalDownloadKrs">
+    Unduh
+  </button>
+  <a href="{{ route('krs.susunAngkatan', ['slug' => $slug]) }}" class="btn btn-custom" id="btnTambah">Susun KRS</a>
+</div>
 
   <div class="container mt-3 mb-5">
     <div class="table-responsive">
-      <table class="table align-middle text-center custom-table table-mahasiswa" id="tabelMahasiswa">
+      <table class="table align-middle text-center custom-table table-mahasiswa">
         <thead class="align-middle">
           <tr>
-            <th>No</th>
-            <th>
-              Semester
-              <button class="btn btn-sm btn-sort" data-column="1"></button>
-            </th>
-            <th>
-              NIM
-              <button class="btn btn-sm btn-sort" data-column="2"></button>
-            </th>
-            <th>
-              Nama
-              <button class="btn btn-sm btn-sort" data-column="3"></button>
-            </th>
-            <th>No Telp</th>
-            <th>Email</th>
+            <th>No</th> 
+            <th>Tahun Masuk</th>
+            <th>NIM</th> 
+            <th>Nama</th> 
+            <th>Semester</th> 
+            <th>Aksi</th>
           </tr>
         </thead>
-        <tbody class="bg-white">
-          @foreach($mahasiswa as $mhs)
-          <tr>
-            <td class="cell-counter"></td>
-            <td>{{ $mhs->semester }}</td>
-            <td>{{ $mhs->nim }}</td>
-            <td class="text-start">
-              <a href="{{ route('krs.editNilai', $mhs->nim) }}" class="text-decoration-none text-dark d-inline-flex align-items-center">
-                {{ $mhs->nama }}
-                <i class="bi bi-chevron-right ms-1" style="font-size: 0.9rem; opacity: 0.6;"></i>
-              </a>
-            </td>
-            <td>{{ $mhs->no_telp }}</td>
-            <td class="text-start">{{ $mhs->email }}</td>
-          </tr>
-          @endforeach
+        <tbody class="bg-white" id="tableBody"> 
+          @include('krs._show_angkatan_table_rows')
         </tbody>
       </table>
     </div>
   </div>
+
+  <div class="modal fade" id="modalDownloadKrs" tabindex="-1" aria-labelledby="modalDownloadKrsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDownloadKrsLabel">
+                    Unduh KRS Angkatan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+                <p>Silakan pilih format file:</p>
+
+                <button
+                    type="button"
+                    class="btn btn-primary me-2"
+                    onclick="downloadFile('{{ route('krs.downloadAngkatan', ['slug' => $slug]) }}')">
+                    Unduh PDF
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="downloadFile('{{ route('krs.downloadAngkatanExcel', ['slug' => $slug]) }}')">
+                    Unduh Excel
+                </button>
+            </div>
+
+        </div>
+    </div>
+  </div>
+
+<script>
+function downloadFile(url) {
+    // Tutup modal
+    const modalEl = document.getElementById('modalDownloadKrs');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+
+    // Mulai download
+    window.location.href = url;
+}
+</script>
+
 @endsection
